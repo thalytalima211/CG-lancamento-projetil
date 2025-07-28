@@ -21,7 +21,6 @@ last_time = None             # timestamp da última atualização
 launch_count = 0             # contador de lançamentos
 
 trajectory_points = []       # pontos do rastro do projétil (para desenhar)
-camera_mode = 0              # modo de câmera (0 ou 1)
 MIN_FORCE_TO_EXIT = 5.5      # força mínima extra para sair do canhão
 start_x_position = 0.0       # posição x inicial do lançamento para calcular distância
 
