@@ -91,8 +91,6 @@ def keyboard(key, x, y):
         force += 1
     elif key == 'a' and not is_launched and force > 1:
         force -= 1
-    elif key == 'c':
-        camera_mode = (camera_mode + 1) % 2
     elif key == ' ' and not is_launched:
         is_launched = True
         launch_sound.play()

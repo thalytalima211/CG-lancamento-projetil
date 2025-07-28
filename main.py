@@ -19,22 +19,6 @@ def confCamera():
     gl.glLoadIdentity()
     glu.gluLookAt(-25,20,-70, 60,10,-10, 0,1,0)
 
-def confCameraFollowProjectile():
-    gl.glMatrixMode(gl.GL_PROJECTION)
-    gl.glLoadIdentity()
-    glu.gluPerspective(60.0, 800/512, 0.1, 100.0)
-    gl.glMatrixMode(gl.GL_MODELVIEW)
-    gl.glLoadIdentity()
-
-    proj_x, proj_y, proj_z = controller.proj_pos
-
-    cam_x = proj_x + offset_x
-    cam_y = proj_y + offset_y
-    cam_z = proj_z + offset_z
-
-    glu.gluLookAt(cam_x, cam_y, cam_z, proj_x, proj_y, proj_z, 0, 1, 0)
-
-
 def confCameraFollowSide():
     gl.glMatrixMode(gl.GL_PROJECTION)
     gl.glLoadIdentity()
