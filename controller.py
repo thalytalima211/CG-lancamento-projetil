@@ -16,9 +16,10 @@ force = 30                   # força do lançamento
 is_launched = False          # está em voo?
 proj_pos = [0, 0, 0]         # posição atual do projétil
 proj_vel = [0.0, 0.0, 0.0]   # velocidade atual do projétil (vx, vy, vz)
-g = 9.81                    # aceleração da gravidade (m/s²)
+g = 9.81                     # aceleração da gravidade (m/s²)
 last_time = None             # timestamp da última atualização
 launch_count = 0             # contador de lançamentos
+distances = []               # lista para armazenar resultados das jogadas
 
 trajectory_points = []       # pontos do rastro do projétil (para desenhar)
 MIN_FORCE_TO_EXIT = 5.5      # força mínima extra para sair do canhão
@@ -46,15 +47,54 @@ def draw_rect(x, y, width, height, color=(0, 0, 0, 0.5)):
     """Desenha um retângulo semi-transparente no espaço da janela."""
     gl.glDisable(gl.GL_LIGHTING)
     gl.glDisable(gl.GL_DEPTH_TEST)
+
+    gl.glDisable(gl.GL_LINE_SMOOTH)    # Remove suavização
+    gl.glDisable(gl.GL_POLYGON_SMOOTH)
+    
     gl.glColor4f(*color)
     gl.glBegin(gl.GL_QUADS)
     gl.glVertex2f(x, y)
     gl.glVertex2f(x + width, y)
-    gl.glVertex2f(x + width, y - height)
-    gl.glVertex2f(x, y - height)
+    gl.glVertex2f(x + width, y + height)
+    gl.glVertex2f(x, y + height)
     gl.glEnd()
     gl.glEnable(gl.GL_LIGHTING)
     gl.glEnable(gl.GL_DEPTH_TEST)
+    
+def draw_force_bar():
+    max_width = 200  
+    height = 10
+    filled_width = (force / 100) * max_width
+
+    gl.glMatrixMode(gl.GL_PROJECTION)
+    gl.glPushMatrix()
+    gl.glLoadIdentity()
+    gl.glOrtho(0, glut.glutGet(glut.GLUT_WINDOW_WIDTH), 0, glut.glutGet(glut.GLUT_WINDOW_HEIGHT), -1, 1)
+    gl.glMatrixMode(gl.GL_MODELVIEW)
+    gl.glPushMatrix()
+    gl.glLoadIdentity()
+
+    win_w = glut.glutGet(glut.GLUT_WINDOW_WIDTH)
+    x = (win_w - max_width) // 2
+    y = 40  
+
+    # Define cor dinâmica
+    if force < 40:
+        color = (0.2, 0.4, 1.0, 0.8) 
+    elif force < 70:
+        color = (1.0, 0.8, 0.0, 0.8) 
+    else:
+        color = (1.0, 0.2, 0.2, 0.8)  
+
+    # Desenha borda
+    draw_rect(x - 2, y - 2, max_width + 4, height + 4, color=(0, 0, 0, 1.0))
+    draw_rect(x, y, max_width, height, color=(0.3, 0.3, 0.3, 0.7))
+    draw_rect(x, y, filled_width, height, color=color)
+
+    gl.glPopMatrix()
+    gl.glMatrixMode(gl.GL_PROJECTION)
+    gl.glPopMatrix()
+    gl.glMatrixMode(gl.GL_MODELVIEW)
 
 def draw_hud():
     """Desenha o HUD com informações sobre ângulo, força, estado e comandos."""
@@ -65,16 +105,25 @@ def draw_hud():
     line_height = 20
 
     draw_rect(box_x, box_y, box_w, box_h, color=(0.1, 0.1, 0.1, 0.6))
-    gl.glColor3f(1, 1, 1)
+    gl.glColor3f(0.0, 0.0, 0.0) 
 
     start_y = box_y - 25
     draw_text(box_x + 10, start_y, f"🎯 Ângulo: {angle}°")
     draw_text(box_x + 10, start_y - 1*line_height, f"💪 Força: {force}")
     draw_text(box_x + 10, start_y - 2*line_height, f"🚀 Estado: {'Voo' if is_launched else 'Parado'}")
     draw_text(box_x + 10, start_y - 3*line_height, f"🎲 Arremessos: {launch_count}")
-    draw_text(box_x + 10, start_y - 4*line_height, "W/S ou ↑/↓: Ângulo")
-    draw_text(box_x + 10, start_y - 5*line_height, "A/D ou ←/→: Força")
-    draw_text(box_x + 10, start_y - 6*line_height, "Espaço: Lançar")
+    draw_text(box_x + 10, start_y - 4*line_height, " W/S ou ↑/↓: Ângulo")
+    draw_text(box_x + 10, start_y - 5*line_height, " A/D ou ←/→: Força")
+    draw_text(box_x + 10, start_y - 6*line_height, " Espaço: Lançar")
+    
+    if distances:
+        draw_text(box_x + 10, start_y - 7*line_height, f"🏁 Distância percorrida: {distances[-1]:.2f} m")
+    sorted_distances = sorted(enumerate(distances, 1), key=lambda x: x[1], reverse=True)
+    
+    draw_text(box_x + 10, start_y - 8*line_height, "🏆 Ranking:")
+    for i, (jogada, dist) in enumerate(sorted_distances[:3], start=1):  # top 3
+        draw_text(box_x + 10, start_y - (8+i)*line_height, f"{i}º Jogada {jogada}: {dist:.2f} m")
+    draw_force_bar()
 
 def keyboard(key, x, y):
     """Teclas normais (ASCII)."""
@@ -165,6 +214,7 @@ def update_projectile():
             is_launched = False
 
             distancia = proj_pos[0] - start_x_position
+            distances.append(distancia)
             print(f"🏁 Distância percorrida: {distancia:.2f} metros")
 
     else:
